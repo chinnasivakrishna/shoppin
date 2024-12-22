@@ -105,7 +105,7 @@ async function crawlDomains(domains) {
 
 // Example usage
 (async () => {
-    const domains = ["http://example1.com", "http://example2.com", "http://example3.com"];
+    const domains = ["https://www.flipkart.com/", "https://www.amazon.in/"];
     const results = await crawlDomains(domains);
     console.log(JSON.stringify(results, null, 2));
 })();
