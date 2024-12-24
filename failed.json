@@ -1,0 +1,16 @@
+[
+  {
+    "domain": "amazon.com",
+    "failedUrls": []
+  },
+  {
+    "domain": "target.com",
+    "failedUrls": [
+      "https://www.target.com"
+    ]
+  },
+  {
+    "domain": "walmart.com",
+    "failedUrls": []
+  }
+]
