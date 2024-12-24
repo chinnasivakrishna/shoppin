@@ -49,8 +49,13 @@ class EcommerceCrawler {
                 '--disable-accelerated-2d-canvas',
                 '--disable-gpu',
                 '--window-size=1920x1080'
-            ]
+            ],
+            // Add these new configurations for deployment
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+            ignoreDefaultArgs: ['--disable-extensions'],
+            pipe: true
         });
+        
         
         try {
             // Process domains sequentially instead of parallel to avoid detection
@@ -350,5 +355,16 @@ const domains = [
     'walmart.com'
 ];
 
-const crawler = new EcommerceCrawler(domains);
-crawler.crawl().catch(console.error);
+const PORT = process.env.PORT || 3000;
+const server = require('http').createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Crawler Service Running');
+});
+
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    
+    // Start the crawler
+    const crawler = new EcommerceCrawler(domains);
+    crawler.crawl().catch(console.error);
+});
