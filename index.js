@@ -1,22 +1,29 @@
-// Import required modules
-const axios = require('axios');
+const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const { URL } = require('url');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 
-// Helper function to fetch HTML content from a URL
-async function fetchHTML(url) {
-    try {
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; EcomCrawler/1.0)'
-            }
-        });
-        return response.data;
-    } catch (error) {
-        console.error(`Failed to fetch ${url}:`, error.message);
-        return null;
+// Helper function to fetch HTML content from a URL using Puppeteer
+async function fetchHTML(url, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const browser = await puppeteer.launch({
+                headless: 'new', // Use 'new' for Puppeteer v20+, or set false if debugging
+                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                timeout: 60000, // Adjust browser launch timeout
+            });
+            const page = await browser.newPage();
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+            await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 }); // Increased timeout
+            const html = await page.content();
+            await browser.close();
+            return html;
+        } catch (error) {
+            console.error(`Attempt ${i + 1} failed for ${url}:`, error.message);
+        }
     }
+    console.error(`Failed to fetch ${url} after ${retries} retries`);
+    return null;
 }
 
 // Function to extract product URLs from a page
@@ -67,6 +74,9 @@ async function crawlDomain(domain, maxDepth = 3) {
                 queue.push({ url: absoluteURL, depth: depth + 1 });
             }
         });
+
+        // Introduce delay to avoid being flagged as a bot
+        await sleep(2000); // 2 seconds
     }
 
     return Array.from(productURLs);
@@ -103,9 +113,14 @@ async function crawlDomains(domains) {
     });
 }
 
+// Helper function to introduce delay
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Example usage
 (async () => {
-    const domains = ["https://www.flipkart.com/", "https://www.amazon.in/"];
+    const domains = ["https://www.flipkart.com", "https://www.myntra.com"];
     const results = await crawlDomains(domains);
     console.log(JSON.stringify(results, null, 2));
 })();
